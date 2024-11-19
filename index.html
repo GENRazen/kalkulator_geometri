@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Transformasi Geometri</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* height: 100vh; */
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Kalkulator Transformasi Geometri</h1>
+        <form id="transformationForm">
+            <div class="form-group">
+                <label for="transformationType">Jenis Transformasi:</label>
+                <select id="transformationType">
+                    <option value="rotation">Rotasi</option>
+                    <option value="reflection">Refleksi</option>
+                    <option value="dilation">Dilatasi</option>
+                    <option value="translation">Translasi</option>
+                </select>
+            </div>
+            <div id="parameters" class="form-group">
+                <!-- Parameter akan ditambahkan secara dinamis di sini -->
+            </div>
+            <div class="form-group">
+                <button type="button" onclick="calculateTransformation()">Hitung</button>
+            </div>
+        </form>
+        <div id="result" class="form-group">
+            <!-- Hasil akan ditampilkan di sini -->
+        </div>
+        <canvas id="transformationChart" width="400" height="400"></canvas>
+    </div>
+    <script>
+        let chart = null;
+
+        // Menambahkan event listener untuk mengganti parameter sesuai jenis transformasi
+        document.getElementById('transformationType').addEventListener('change', updateParameters);
+
+        // Fungsi untuk memperbarui parameter input sesuai jenis transformasi
+        function updateParameters() {
+            const transformationType = document.getElementById('transformationType').value;
+            const parametersDiv = document.getElementById('parameters');
+            parametersDiv.innerHTML = '';
+
+            switch (transformationType) {
+                case 'rotation':
+                    parametersDiv.innerHTML = `
+                        <label for="angle">Sudut (derajat):</label>
+                        <input type="number" id="angle" placeholder="Masukkan sudut rotasi">
+                    `;
+                    break;
+                case 'reflection':
+                    parametersDiv.innerHTML = `
+                        <label for="axis">Sumbu Refleksi (x, y, y=x, y=-x):</label>
+                        <input type="text" id="axis" placeholder="Masukkan sumbu refleksi">
+                    `;
+                    break;
+                case 'dilation':
+                    parametersDiv.innerHTML = `
+                        <label for="scaleFactor">Faktor Skala:</label>
+                        <input type="number" id="scaleFactor" placeholder="Masukkan faktor skala">
+                    `;
+                    break;
+                case 'translation':
+                    parametersDiv.innerHTML = `
+                        <label for="translateX">Pergeseran X:</label>
+                        <input type="number" id="translateX" placeholder="Masukkan pergeseran X">
+                        <label for="translateY">Pergeseran Y:</label>
+                        <input type="number" id="translateY" placeholder="Masukkan pergeseran Y">
+                    `;
+                    break;
+            }
+        }
+
+        // Fungsi untuk menghitung hasil transformasi
+        function calculateTransformation() {
+            const transformationType = document.getElementById('transformationType').value;
+            let result = '';
+            let transformedPoints = [];
+
+            // Titik awal (segiempat)
+            const points = [
+                { x: 0, y: 0 },
+                { x: 1, y: 0 },
+                { x: 1, y: 1 },
+                { x: 0, y: 1 }
+            ];
+
+            switch (transformationType) {
+                case 'rotation':
+                    const angle = parseFloat(document.getElementById('angle').value) * (Math.PI / 180);
+                    result = `Rotasi sebesar ${angle * (180 / Math.PI)} derajat`;
+                    transformedPoints = points.map(p => ({
+                        x: p.x * Math.cos(angle) - p.y * Math.sin(angle),
+                        y: p.x * Math.sin(angle) + p.y * Math.cos(angle)
+                    }));
+                    break;
+                case 'reflection':
+                    const axis = document.getElementById('axis').value;
+                    result = `Refleksi terhadap sumbu ${axis}`;
+                    if (axis === 'x') {
+                        transformedPoints = points.map(p => ({ x: p.x, y: -p.y }));
+                    } else if (axis === 'y') {
+                        transformedPoints = points.map(p => ({ x: -p.x, y: p.y }));
+                    } else if (axis === 'y=x') {
+                        transformedPoints = points.map(p => ({ x: p.y, y: p.x }));
+                    } else if (axis === 'y=-x') {
+                        transformedPoints = points.map(p => ({ x: -p.y, y: -p.x }));
+                    }
+                    break;
+                case 'dilation':
+                    const scaleFactor = parseFloat(document.getElementById('scaleFactor').value);
+                    result = `Dilatasi dengan faktor skala ${scaleFactor}`;
+                    transformedPoints = points.map(p => ({ x: p.x * scaleFactor, y: p.y * scaleFactor }));
+                    break;
+                case 'translation':
+                    const translateX = parseFloat(document.getElementById('translateX').value);
+                    const translateY = parseFloat(document.getElementById('translateY').value);
+                    result = `Translasi sebesar (${translateX}, ${translateY})`;
+                    transformedPoints = points.map(p => ({ x: p.x + translateX, y: p.y + translateY }));
+                    break;
+            }
+
+            document.getElementById('result').innerText = result;
+            drawChart(transformedPoints);
+        }
+
+        // Fungsi untuk menggambar grafik menggunakan Chart.js
+        function drawChart(transformedPoints) {
+            const ctx = document.getElementById('transformationChart').getContext('2d');
+            
+            // Hapus grafik sebelumnya jika ada
+            if (chart) {
+                chart.destroy();
+            }
+
+            const originalPoints = [
+                { x: 0, y: 0 },
+                { x: 1, y: 0 },
+                { x: 1, y: 1 },
+                { x: 0, y: 1 },
+                { x: 0, y: 0 }
+            ];
+
+            const transformedData = transformedPoints.concat(transformedPoints[0]);
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Bentuk Asli',
+                        data: originalPoints.map(p => ({ x: p.x, y: p.y })),
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false,
+                        lineTension: 0
+                    }, {
+                        label: 'Bentuk Setelah Transformasi',
+                        data: transformedData.map(p => ({ x: p.x, y: p.y })),
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        fill: false,
+                        lineTension: 0
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom'
+                        },
+                        y: {
+                            type: 'linear'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Inisialisasi parameter dengan jenis transformasi pertama
+        updateParameters();
+    </script>
+</body>
+</html>
