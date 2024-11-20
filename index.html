@@ -184,10 +184,10 @@
                     break;
                 case 'refleksi':
                     const axis = document.getElementById('axis').value.toLowerCase();
-                    if (axis === 'x') transformedPoint = { x, y: -y };
-                    else if (axis === 'y') transformedPoint = { x: -x, y };
-                    else if (axis === 'y=x') transformedPoint = { x: y, y: x };
-                    else if (axis === 'y=-x') transformedPoint = { x: -y, y: -x };
+                    if (axis == 'x') transformedPoint = { x, y: -y };
+                    else if (axis == 'y') transformedPoint = { x: -x, y };
+                    else if (axis == 'y=x') transformedPoint = { x: y, y: x };
+                    else if (axis == 'y=-x') transformedPoint = { x: -y, y: -x };
                     else {
                         document.getElementById('result').innerText = "Sumbu refleksi tidak valid.";
                         return;
