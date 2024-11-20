@@ -11,6 +11,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             margin: 0;
         }
         .container {
@@ -20,6 +21,7 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             width: 400px;
             text-align: center;
+            margin-bottom: 20px;
         }
         h1 {
             font-size: 24px;
@@ -47,11 +49,9 @@
         button:hover {
             background-color: #0056b3;
         }
-        #result {
-            margin-top: 20px;
-        }
         canvas {
-            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
@@ -83,7 +83,34 @@
             <!-- Hasil akan ditampilkan di sini -->
         </div>
     </div>
+    <canvas id="canvas" width="500" height="500"></canvas>
     <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Menggambar bidang kartesius
+        function drawCartesianPlane() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Garis horizontal
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.strokeStyle = '#ccc';
+            ctx.stroke();
+
+            // Garis vertikal
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.strokeStyle = '#ccc';
+            ctx.stroke();
+        }
+
+        // Menambahkan event listener untuk mengubah parameter transformasi
         document.getElementById('transformationType').addEventListener('change', updateParameters);
 
         function updateParameters() {
@@ -121,61 +148,71 @@
             }
         }
 
+        function drawPoint(x, y, color = 'red') {
+            const transformedX = centerX + x * 20; // Skala 20px per unit
+            const transformedY = centerY - y * 20; // Invert Y untuk bidang kartesius
+            ctx.beginPath();
+            ctx.arc(transformedX, transformedY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
         function calculateTransformation() {
+            drawCartesianPlane(); // Reset bidang kartesius
+
             const transformationType = document.getElementById('transformationType').value;
             const pointInput = document.getElementById('point').value;
             const [x, y] = pointInput.split(',').map(Number);
-            let result = '';
-            let transformedPoint = {};
 
             if (isNaN(x) || isNaN(y)) {
                 document.getElementById('result').innerText = "Masukkan koordinat yang valid.";
                 return;
             }
 
+            drawPoint(x, y, 'blue'); // Gambar titik awal
+
+            let transformedPoint = {};
+            let resultText = '';
+
             switch (transformationType) {
                 case 'rotasi':
                     const angle = parseFloat(document.getElementById('angle').value) * (Math.PI / 180);
-                    result = `Rotasi sebesar ${angle * (180 / Math.PI)} derajat menghasilkan: `;
                     transformedPoint = {
                         x: x * Math.cos(angle) - y * Math.sin(angle),
                         y: x * Math.sin(angle) + y * Math.cos(angle),
                     };
+                    resultText = `Rotasi sebesar ${angle * (180 / Math.PI)} derajat menghasilkan: `;
                     break;
                 case 'refleksi':
                     const axis = document.getElementById('axis').value.toLowerCase();
-                    result = `Refleksi terhadap ${axis} menghasilkan: `;
-                    if (axis === 'x') {
-                        transformedPoint = { x, y: -y };
-                    } else if (axis === 'y') {
-                        transformedPoint = { x: -x, y };
-                    } else if (axis === 'y=x') {
-                        transformedPoint = { x: y, y: x };
-                    } else if (axis === 'y=-x') {
-                        transformedPoint = { x: -y, y: -x };
-                    } else {
-                        document.getElementById('result').innerText = "Masukkan sumbu refleksi yang valid.";
+                    if (axis === 'x') transformedPoint = { x, y: -y };
+                    else if (axis === 'y') transformedPoint = { x: -x, y };
+                    else if (axis === 'y=x') transformedPoint = { x: y, y: x };
+                    else if (axis === 'y=-x') transformedPoint = { x: -y, y: -x };
+                    else {
+                        document.getElementById('result').innerText = "Sumbu refleksi tidak valid.";
                         return;
                     }
+                    resultText = `Refleksi terhadap ${axis} menghasilkan: `;
                     break;
                 case 'dilatasi':
                     const scaleFactor = parseFloat(document.getElementById('scaleFactor').value);
-                    result = `Dilatasi dengan faktor ${scaleFactor} menghasilkan: `;
                     transformedPoint = { x: x * scaleFactor, y: y * scaleFactor };
+                    resultText = `Dilatasi dengan faktor ${scaleFactor} menghasilkan: `;
                     break;
                 case 'translasi':
                     const translateX = parseFloat(document.getElementById('translateX').value);
                     const translateY = parseFloat(document.getElementById('translateY').value);
-                    result = `Translasi sebesar (${translateX}, ${translateY}) menghasilkan: `;
                     transformedPoint = { x: x + translateX, y: y + translateY };
+                    resultText = `Translasi sebesar (${translateX}, ${translateY}) menghasilkan: `;
                     break;
             }
 
-            document.getElementById('result').innerText = `${result} (${transformedPoint.x.toFixed(2)}, ${transformedPoint.y.toFixed(2)})`;
+            drawPoint(transformedPoint.x, transformedPoint.y, 'green'); // Gambar titik hasil
+            document.getElementById('result').innerText = `${resultText} (${transformedPoint.x.toFixed(2)}, ${transformedPoint.y.toFixed(2)})`;
         }
 
-        // Inisialisasi dengan parameter default
-        updateParameters();
+        drawCartesianPlane(); // Gambar bidang kartesius awal
     </script>
 </body>
 </html>
