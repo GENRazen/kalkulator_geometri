@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalkulator Transformasi Geometri</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -50,8 +51,8 @@
             background-color: #0056b3;
         }
         canvas {
-            background-color: #fff;
-            border: 1px solid #ccc;
+            max-width: 500px;
+            max-height: 500px;
         }
     </style>
 </head>
@@ -83,34 +84,46 @@
             <!-- Hasil akan ditampilkan di sini -->
         </div>
     </div>
-    <canvas id="canvas" width="500" height="500"></canvas>
+    <canvas id="chartCanvas"></canvas>
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Titik Awal',
+                        data: [],
+                        backgroundColor: 'blue',
+                        borderColor: 'blue',
+                        borderWidth: 1,
+                        pointRadius: 6,
+                    },
+                    {
+                        label: 'Titik Hasil',
+                        data: [],
+                        backgroundColor: 'green',
+                        borderColor: 'green',
+                        borderWidth: 1,
+                        pointRadius: 6,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: { display: true, text: 'X' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Y' }
+                    }
+                }
+            }
+        });
 
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        // Menggambar bidang kartesius
-        function drawCartesianPlane() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Garis horizontal
-            ctx.beginPath();
-            ctx.moveTo(0, centerY);
-            ctx.lineTo(canvas.width, centerY);
-            ctx.strokeStyle = '#ccc';
-            ctx.stroke();
-
-            // Garis vertikal
-            ctx.beginPath();
-            ctx.moveTo(centerX, 0);
-            ctx.lineTo(centerX, canvas.height);
-            ctx.strokeStyle = '#ccc';
-            ctx.stroke();
-        }
-
-        // Menambahkan event listener untuk mengubah parameter transformasi
         document.getElementById('transformationType').addEventListener('change', updateParameters);
 
         function updateParameters() {
@@ -148,18 +161,7 @@
             }
         }
 
-        function drawPoint(x, y, color = 'red') {
-            const transformedX = centerX + x * 20; // Skala 20px per unit
-            const transformedY = centerY - y * 20; // Invert Y untuk bidang kartesius
-            ctx.beginPath();
-            ctx.arc(transformedX, transformedY, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = color;
-            ctx.fill();
-        }
-
         function calculateTransformation() {
-            drawCartesianPlane(); // Reset bidang kartesius
-
             const transformationType = document.getElementById('transformationType').value;
             const pointInput = document.getElementById('point').value;
             const [x, y] = pointInput.split(',').map(Number);
@@ -169,10 +171,8 @@
                 return;
             }
 
-            drawPoint(x, y, 'blue'); // Gambar titik awal
-
+            const initialPoint = { x, y };
             let transformedPoint = {};
-            let resultText = '';
 
             switch (transformationType) {
                 case 'rotasi':
@@ -181,7 +181,6 @@
                         x: x * Math.cos(angle) - y * Math.sin(angle),
                         y: x * Math.sin(angle) + y * Math.cos(angle),
                     };
-                    resultText = `Rotasi sebesar ${angle * (180 / Math.PI)} derajat menghasilkan: `;
                     break;
                 case 'refleksi':
                     const axis = document.getElementById('axis').value.toLowerCase();
@@ -193,26 +192,29 @@
                         document.getElementById('result').innerText = "Sumbu refleksi tidak valid.";
                         return;
                     }
-                    resultText = `Refleksi terhadap ${axis} menghasilkan: `;
                     break;
                 case 'dilatasi':
                     const scaleFactor = parseFloat(document.getElementById('scaleFactor').value);
                     transformedPoint = { x: x * scaleFactor, y: y * scaleFactor };
-                    resultText = `Dilatasi dengan faktor ${scaleFactor} menghasilkan: `;
                     break;
                 case 'translasi':
                     const translateX = parseFloat(document.getElementById('translateX').value);
                     const translateY = parseFloat(document.getElementById('translateY').value);
                     transformedPoint = { x: x + translateX, y: y + translateY };
-                    resultText = `Translasi sebesar (${translateX}, ${translateY}) menghasilkan: `;
                     break;
             }
 
-            drawPoint(transformedPoint.x, transformedPoint.y, 'green'); // Gambar titik hasil
-            document.getElementById('result').innerText = `${resultText} (${transformedPoint.x.toFixed(2)}, ${transformedPoint.y.toFixed(2)})`;
+            // Update chart
+            chart.data.datasets[0].data = [initialPoint];
+            chart.data.datasets[1].data = [transformedPoint];
+            chart.update();
+
+            // Tampilkan hasil
+            document.getElementById('result').innerText = `Titik awal (${x}, ${y}) berubah menjadi (${transformedPoint.x.toFixed(2)}, ${transformedPoint.y.toFixed(2)})`;
         }
 
-        drawCartesianPlane(); // Gambar bidang kartesius awal
+        // Inisialisasi parameter pertama
+        updateParameters();
     </script>
 </body>
 </html>
